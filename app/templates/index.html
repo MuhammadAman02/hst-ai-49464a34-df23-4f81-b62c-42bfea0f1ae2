@@ -1,9 +1,76 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Tone Color Analysis</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .color-box { width: 50px; height: 50px; display: inline-block; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Skin Tone Color Analysis</h1>
+    
+    <h2>Upload Image</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <button type="submit">Analyze</button>
+    </form>
 
-{% block title %}Home - My Application{% endblock %}
+    <div id="results" style="display:none;">
+        <h2>Results</h2>
+        <p>Skin Tone: <span id="skinTone"></span></p>
+        <h3>Suggested Color Palette:</h3>
+        <div id="colorPalette"></div>
+    </div>
 
-{% block content %}
-    <h1>Hello, FastAPI!</h1>
-    <p>Welcome to your new FastAPI application, built using our world-class template foundation!</p>
-    <p>Current time: {{ current_time }}</p>
-{% endblock %}
+    <h2>Change Skin Tone</h2>
+    <form id="changeToneForm" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <input type="text" name="target_tone" placeholder="R,G,B" required>
+        <button type="submit">Change Skin Tone</button>
+    </form>
+
+    <div id="changedImage" style="display:none;">
+        <h3>Modified Image:</h3>
+        <img id="modifiedImage" src="" alt="Modified Image">
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/api/analyze-image', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            document.getElementById('skinTone').textContent = `RGB(${data.skin_tone.join(', ')})`;
+            const palette = document.getElementById('colorPalette');
+            palette.innerHTML = '';
+            data.color_palette.forEach(color => {
+                const box = document.createElement('div');
+                box.className = 'color-box';
+                box.style.backgroundColor = `rgb(${color.join(',')})`;
+                palette.appendChild(box);
+            });
+            document.getElementById('results').style.display = 'block';
+        });
+
+        document.getElementById('changeToneForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/api/change-skin-tone', {
+                method: 'POST',
+                body: formData
+            });
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            document.getElementById('modifiedImage').src = imageUrl;
+            document.getElementById('changedImage').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
